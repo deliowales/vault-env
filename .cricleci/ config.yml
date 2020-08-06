@@ -1,0 +1,23 @@
+version: 2.1
+orbs:
+  aws-assume-role: holdaraffle/aws-assume-role@0.0.10
+jobs: 
+  build:
+    docker:
+      - image: circleci/golang:1.13
+    working_directory: /go/src/github.com/deliowales/vault-env
+    steps:
+      - checkout
+      - run: go build -ldflags '-d' -tags netgo -installsuffix netgo .
+      - aws-assume-role/assume_role:
+          access_key_id: AWS_ECR_ACCESS_KEY_M
+          secret_access_key: AWS_ECR_SECRET_ACCESS_KEY_M
+          account: "835441458204"
+          role: "iam-circleci-access-role"
+      - run:  aws s3 cp vault-env s3://s3-artefacts-management-835441458204/vault-env/vault-env
+workflows:
+  version: 2.1
+  commit:
+     jobs:
+       - build:
+           context: delio
